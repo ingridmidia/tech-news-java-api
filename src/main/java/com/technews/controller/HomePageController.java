@@ -30,6 +30,29 @@ public class HomePageController {
     @Autowired
     CommentRepository commentRepository;
 
+    @GetMapping("/")
+    public String homepageSetup(Model model, HttpServletRequest request) {
+        User sessionUser = new User();
+
+        if (request.getSession(false) != null) {
+            sessionUser = (User) request.getSession().getAttribute("SESSION_USER");
+            model.addAttribute("loggedIn", sessionUser.isLoggedIn());
+        } else {
+            model.addAttribute("loggedIn", false);
+        }
+
+        List<Post> postList = postRepository.findAll();
+        for (Post p : postList) {
+            p.setVoteCount(voteRepository.countVotesByPostId(p.getId()));
+            User user = userRepository.getById(p.getUserId());
+            p.setUserName(user.getUsername());
+        }
+
+        model.addAttribute("postList", postList);
+
+        return "homepage";
+    }
+
     @GetMapping("/login")
     public String login(Model model, HttpServletRequest request) {
 
@@ -47,35 +70,6 @@ public class HomePageController {
             request.getSession().invalidate();
         }
         return "redirect:/login";
-    }
-
-    @GetMapping("/")
-    public String homepageSetup(Model model, HttpServletRequest request) {
-        User sessionUser = new User();
-
-        if (request.getSession(false) != null) {
-            sessionUser = (User) request.getSession().getAttribute("SESSION_USER");
-            model.addAttribute("loggedIn", sessionUser.isLoggedIn());
-        } else {
-            model.addAttribute("loggedIn", false);
-        }
-
-
-        List<Post> postList = postRepository.findAll();
-        for (Post p : postList) {
-            p.setVoteCount(voteRepository.countVotesByPostId(p.getId()));
-            User user = userRepository.getById(p.getUserId());
-            p.setUserName(user.getUsername());
-        }
-
-        model.addAttribute("postList", postList);
-        model.addAttribute("loggedIn", sessionUser.isLoggedIn());
-
-        // "point" and "points" attributes refer to upvotes.
-        model.addAttribute("point", "point");
-        model.addAttribute("points", "points");
-
-        return "homepage";
     }
 
     @GetMapping("/dashboard")
